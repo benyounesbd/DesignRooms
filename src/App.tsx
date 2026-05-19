@@ -1,11 +1,20 @@
-import { useState } from "react";
+import View2D from "./components/View2D";
+import View3D from "./components/View3D";
+import Settings from "./components/Settings";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <>
-      <h1 className="text-3xl font-bold underline">Hello world!</h1>
+      <div className="bg-black text-white w-full h-full flex p-10">
+        <div>
+          <h1>Lorem ipsum</h1>
+          <View2D />
+        </div>
+        <div className=" m-10">
+          <View3D />
+          <Settings />
+        </div>
+      </div>
     </>
   );
 }
