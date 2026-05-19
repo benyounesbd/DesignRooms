@@ -1,9 +1,28 @@
-function App() {
+import { useEffect, useRef } from "react";
+import { initDevice, configureCanvas } from "../utils/main";
+
+function View3D() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    async function setup() {
+      if (!canvasRef.current) return;
+
+      await initDevice();
+
+      configureCanvas(canvasRef.current);
+
+      console.log("3D canvas ready");
+    }
+
+    setup();
+  }, []);
+
   return (
     <>
-      <h1 className="text-3xl font-bold underline">Hello world!</h1>
+      <canvas ref={canvasRef} width="450" height="225" />
     </>
   );
 }
 
-export default App;
+export default View3D;

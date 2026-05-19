@@ -1,9 +1,28 @@
-function App() {
+import { useEffect, useRef } from "react";
+import { initDevice, configureCanvas } from "../utils/main";
+
+function View2D() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    async function setup() {
+      if (!canvasRef.current) return;
+
+      await initDevice();
+
+      configureCanvas(canvasRef.current);
+
+      console.log("2D canvas ready");
+    }
+
+    setup();
+  }, []);
+
   return (
     <>
-      <h1 className="text-3xl font-bold underline">Hello world!</h1>
+      <canvas ref={canvasRef} width="900" height="450" />
     </>
   );
 }
 
-export default App;
+export default View2D;

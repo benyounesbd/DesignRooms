@@ -7,7 +7,7 @@ function App() {
     <>
       <div className="bg-black text-white w-full h-full flex p-10">
         <div>
-          <h1>Lorem ipsum</h1>
+          <h1>Design rooms</h1>
           <View2D />
         </div>
         <div className=" m-10">
