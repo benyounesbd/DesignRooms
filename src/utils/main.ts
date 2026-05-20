@@ -4,13 +4,14 @@ export async function initDevice() {
   if (device) return device;
 
   const adapter = await navigator.gpu.requestAdapter();
-
-  if (!adapter) {
-    throw new Error("WebGPU not supported");
-  }
+  if (!adapter) throw new Error("No GPU adapter");
 
   device = await adapter.requestDevice();
+  return device;
+}
 
+export function getDevice() {
+  if (!device) throw new Error("Device not initialized");
   return device;
 }
 
@@ -22,24 +23,8 @@ export function configureCanvas(canvas: HTMLCanvasElement) {
   context.configure({
     device,
     format,
+    alphaMode: "opaque",
   });
-
-  const encoder = device.createCommandEncoder();
-  const pass = encoder.beginRenderPass({
-    colorAttachments: [
-      {
-        view: context.getCurrentTexture().createView(),
-        loadOp: "clear",
-        clearValue: { r: 0, g: 0, b: 0.4, a: 1 }, // New line
-        storeOp: "store",
-      },
-    ],
-  });
-
-  pass.end();
-  const commandBuffer = encoder.finish();
-  device.queue.submit([commandBuffer]);
-  device.queue.submit([encoder.finish()]);
 
   return { context, format };
 }
