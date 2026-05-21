@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { configureCanvas, getDevice } from "../utils/main";
+import { configureCanvas, getDevice, GRID_CONFIG } from "../utils/main";
 
 function View2D() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -13,32 +13,25 @@ function View2D() {
 
     console.log("2D canvas ready");
 
-    const GRID_SIZE = 4;
+    const COLUMNS = 16;
+    const ROWS = 8;
 
-    const uniformArray = new Float32Array([GRID_SIZE, GRID_SIZE, 0, 0]);
+    // Enviamos los 4 datos empaquetados en un vec4f (16 bytes)
+    const uniformArray = new Float32Array([COLUMNS, ROWS]);
 
     const uniformBuffer = device.createBuffer({
       label: "Grid Uniforms",
       size: uniformArray.byteLength,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
+
     device.queue.writeBuffer(uniformBuffer, 0, uniformArray);
 
     const vertices = new Float32Array([
       //   X,    Y,
-      -0.8,
-      -0.8, // Triangle 1 (Blue)
-      0.8,
-      -0.8,
-      0.8,
-      0.8,
+      -0.9, -0.9, 0.9, -0.9, 0.9, 0.9,
 
-      -0.8,
-      -0.8, // Triangle 2 (Red)
-      0.8,
-      0.8,
-      -0.8,
-      0.8,
+      -0.9, -0.9, 0.9, 0.9, -0.9, 0.9,
     ]);
 
     const vertexBuffer = device.createBuffer({
@@ -55,7 +48,7 @@ function View2D() {
         {
           format: "float32x2",
           offset: 0,
-          shaderLocation: 0, // Position, see vertex shader
+          shaderLocation: 0,
         },
       ],
     };
@@ -66,14 +59,36 @@ function View2D() {
         @group(0) @binding(0) var<uniform> grid: vec2f;
 
         @vertex
-        fn vertexMain(@location(0) pos: vec2f) ->
-          @builtin(position) vec4f {
-          return vec4f(pos / grid, 0, 1);
-        }
+        fn vertexMain(@location(0) pos: vec2f,
+                      @builtin(instance_index) instance: u32) -> @builtin(position) vec4f {
+
+          let i = f32(instance);
           
+          let cols = grid.x;
+          let rows = grid.y;
+
+          let col = i % cols;
+          let row = floor(i / cols);
+
+          let cellSize = vec2f(
+            (2.0 / cols) , 
+            2.0 / rows
+          );
+
+          let normalizedPos = (pos + 1.0) / 2.0;
+
+          let scaledPos = normalizedPos * cellSize;
+
+          let cellOrigin = vec2f(-1.0, -1.0) + vec2f(col * cellSize.x, row * cellSize.y) ;
+
+          let finalPos = cellOrigin + scaledPos;
+
+          return vec4f(finalPos, 0.0, 1.0);
+        }
+
         @fragment
         fn fragmentMain() -> @location(0) vec4f {
-          return vec4f(1, 0, 0, 1);
+          return vec4f(1.0, 0.0, 0.0, 1.0);
         }
       `,
     });
@@ -128,8 +143,8 @@ function View2D() {
 
       pass.setPipeline(pipeline);
       pass.setVertexBuffer(0, vertexBuffer);
-      pass.setBindGroup(0, bindGroup); // New line!
-      pass.draw(vertices.length / 2);
+      pass.setBindGroup(0, bindGroup);
+      pass.draw(vertices.length / 2, COLUMNS * ROWS);
       pass.end();
 
       device.queue.submit([encoder.finish()]);

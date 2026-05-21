@@ -28,3 +28,8 @@ export function configureCanvas(canvas: HTMLCanvasElement) {
 
   return { context, format };
 }
+
+export const GRID_CONFIG = {
+  COLUMNS: 16,
+  ROWS: 8,
+};
