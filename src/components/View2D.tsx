@@ -1,5 +1,10 @@
 import { useEffect, useRef } from "react";
-import { configureCanvas, getDevice, GRID_CONFIG } from "../utils/main";
+import {
+  configureCanvas,
+  getDevice,
+  GRID_CONFIG,
+  cellStates,
+} from "../utils/main";
 
 function View2D() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -13,8 +18,8 @@ function View2D() {
 
     console.log("2D canvas ready");
 
-    const COLUMNS = 16;
-    const ROWS = 8;
+    const { COLUMNS, ROWS } = GRID_CONFIG;
+    const totalCells = GRID_CONFIG.COLUMNS * GRID_CONFIG.ROWS;
 
     // Enviamos los 4 datos empaquetados en un vec4f (16 bytes)
     const uniformArray = new Float32Array([COLUMNS, ROWS]);
@@ -26,6 +31,14 @@ function View2D() {
     });
 
     device.queue.writeBuffer(uniformBuffer, 0, uniformArray);
+
+    const storageBuffer = device.createBuffer({
+      label: "Cell States Storage 2D",
+      size: cellStates.byteLength,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    });
+
+    device.queue.writeBuffer(storageBuffer, 0, cellStates);
 
     const vertices = new Float32Array([
       //   X,    Y,
@@ -57,10 +70,16 @@ function View2D() {
       label: "Cell shader",
       code: `
         @group(0) @binding(0) var<uniform> grid: vec2f;
+        @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
+
+        struct VertexOutput {
+          @builtin(position) position: vec4f,
+          @location(0)  @interpolate(flat) cellState: i32,
+        }
 
         @vertex
         fn vertexMain(@location(0) pos: vec2f,
-                      @builtin(instance_index) instance: u32) -> @builtin(position) vec4f {
+                      @builtin(instance_index) instance: u32) -> VertexOutput {
 
           let i = f32(instance);
           
@@ -81,14 +100,20 @@ function View2D() {
 
           let cellOrigin = vec2f(-1.0, -1.0) + vec2f(col * cellSize.x, row * cellSize.y) ;
 
-          let finalPos = cellOrigin + scaledPos;
+          // let finalPos = cellOrigin + scaledPos;
 
-          return vec4f(finalPos, 0.0, 1.0);
+          var output: VertexOutput;
+          output.position = vec4f(cellOrigin + scaledPos, 0.0, 1.0);
+          output.cellState = cellStates[instance];
+          return output;
         }
 
         @fragment
-        fn fragmentMain() -> @location(0) vec4f {
-          return vec4f(1.0, 0.0, 0.0, 1.0);
+        fn fragmentMain(@location(0) @interpolate(flat) cellState: i32) -> @location(0) vec4f {
+          if (cellState == 1) {
+            return vec4f(1.0, 0.0, 0.0, 1.0); // Cuadrado vacío -> Rojo
+          }
+            return vec4f(1.0, 1.0, 1.0, 1.0); // Cuadrado activo -> Blanco
         }
       `,
     });
@@ -119,6 +144,10 @@ function View2D() {
         {
           binding: 0,
           resource: { buffer: uniformBuffer },
+        },
+        {
+          binding: 1,
+          resource: { buffer: storageBuffer },
         },
       ],
     });

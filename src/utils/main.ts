@@ -33,3 +33,7 @@ export const GRID_CONFIG = {
   COLUMNS: 16,
   ROWS: 8,
 };
+
+export const cellStates = new Int32Array(
+  GRID_CONFIG.COLUMNS * GRID_CONFIG.ROWS,
+);
