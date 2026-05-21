@@ -47,7 +47,7 @@ function View2D() {
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
 
-    device.queue.writeBuffer(vertexBuffer, /*bufferOffset=*/ 0, vertices);
+    device.queue.writeBuffer(vertexBuffer, 0, vertices);
 
     const vertexBufferLayout: GPUVertexBufferLayout = {
       arrayStride: 8,
@@ -68,13 +68,13 @@ function View2D() {
         @vertex
         fn vertexMain(@location(0) pos: vec2f) ->
           @builtin(position) vec4f {
-          return vec4f(pos, 0, 1);
+          return vec4f(pos / grid, 0, 1);
         }
           
-    @fragment
-    fn fragmentMain() -> @location(0) vec4f {
-      return vec4f(1, 0, 0, 1);
-    }
+        @fragment
+        fn fragmentMain() -> @location(0) vec4f {
+          return vec4f(1, 0, 0, 1);
+        }
       `,
     });
 
@@ -97,6 +97,17 @@ function View2D() {
       },
     });
 
+    const bindGroup = device.createBindGroup({
+      label: "Cell renderer bind group",
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: uniformBuffer },
+        },
+      ],
+    });
+
     let animationId: number;
 
     function frame() {
@@ -117,7 +128,7 @@ function View2D() {
 
       pass.setPipeline(pipeline);
       pass.setVertexBuffer(0, vertexBuffer);
-
+      pass.setBindGroup(0, bindGroup); // New line!
       pass.draw(vertices.length / 2);
       pass.end();
 
