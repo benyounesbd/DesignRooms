@@ -16,14 +16,14 @@ function View3D() {
 
     const { context, format } = configureCanvas(canvasRef.current);
 
-    console.log("2D canvas ready");
+    console.log("3D canvas ready");
 
     const { COLUMNS, ROWS } = GRID_CONFIG;
 
     const uniformArray = new Float32Array([COLUMNS, ROWS]);
 
     const uniformBuffer = device.createBuffer({
-      label: "Grid Uniforms",
+      label: "Grid Uniforms 3D",
       size: uniformArray.byteLength,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
@@ -31,7 +31,7 @@ function View3D() {
     device.queue.writeBuffer(uniformBuffer, 0, uniformArray);
 
     const storageBuffer = device.createBuffer({
-      label: "Cell States Storage 2D",
+      label: "Cell States Storage 3D",
       size: cellStates.byteLength,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
@@ -46,7 +46,7 @@ function View3D() {
     ]);
 
     const vertexBuffer = device.createBuffer({
-      label: "Cell vertices",
+      label: "Cell vertices 3D",
       size: vertices.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
@@ -134,7 +134,7 @@ function View3D() {
     });
 
     const bindGroup = device.createBindGroup({
-      label: "Cell renderer bind group",
+      label: "3D bind group",
       layout: pipeline.getBindGroupLayout(0),
       entries: [
         {
@@ -147,28 +147,6 @@ function View3D() {
         },
       ],
     });
-
-    const handleCanvasClick = (event: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const clickY = event.clientY - rect.top;
-
-      const col = Math.floor((clickX / rect.width) * COLUMNS);
-      const row = Math.floor(((rect.height - clickY) / rect.height) * ROWS);
-
-      if (col >= 0 && col < COLUMNS && row >= 0 && row < ROWS) {
-        const index = row * COLUMNS + col;
-
-        cellStates[index] = cellStates[index] === 0 ? 1 : 0;
-        console.log(
-          `Celda [Fila: ${row}, Columna: ${col}] -> Estado actual: ${cellStates[index]} (Índice array: ${index})`,
-        );
-
-        device.queue.writeBuffer(storageBuffer, 0, cellStates);
-      }
-    };
-
-    canvas.addEventListener("click", handleCanvasClick);
 
     let animationId: number;
 
@@ -201,7 +179,6 @@ function View3D() {
 
     return () => {
       cancelAnimationFrame(animationId);
-      canvas.removeEventListener("click", handleCanvasClick);
     };
   }, []);
 
