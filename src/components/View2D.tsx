@@ -11,7 +11,7 @@ function View2D() {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-
+    const canvas = canvasRef.current;
     const device = getDevice();
 
     const { context, format } = configureCanvas(canvasRef.current);
@@ -152,6 +152,28 @@ function View2D() {
       ],
     });
 
+    const handleCanvasClick = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      const col = Math.floor((clickX / rect.width) * COLUMNS);
+      const row = Math.floor(((rect.height - clickY) / rect.height) * ROWS);
+
+      if (col >= 0 && col < COLUMNS && row >= 0 && row < ROWS) {
+        const index = row * COLUMNS + col;
+
+        cellStates[index] = cellStates[index] === 0 ? 1 : 0;
+        console.log(
+          `Celda [Fila: ${row}, Columna: ${col}] -> Estado actual: ${cellStates[index]} (Índice array: ${index})`,
+        );
+
+        device.queue.writeBuffer(storageBuffer, 0, cellStates);
+      }
+    };
+
+    canvas.addEventListener("click", handleCanvasClick);
+
     let animationId: number;
 
     function frame() {
@@ -181,7 +203,10 @@ function View2D() {
     }
     animationId = requestAnimationFrame(frame);
 
-    return () => cancelAnimationFrame(animationId);
+    return () => {
+      cancelAnimationFrame(animationId);
+      canvas.removeEventListener("click", handleCanvasClick);
+    };
   }, []);
 
   return <canvas ref={canvasRef} width={900} height={450} />;
