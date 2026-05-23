@@ -89,7 +89,7 @@ function View3D() {
 
           let cellSize = vec2f(
             (2.0 / cols) , 
-            2.0 / rows
+            2.0 / cols
           );
 
           let normalizedPos = (pos + 1.0) / 2.0;
@@ -98,8 +98,16 @@ function View3D() {
 
           let cellOrigin = vec2f(-1.0, -1.0) + vec2f(col * cellSize.x, row * cellSize.y) ;
 
+          let currentPos = cellOrigin + scaledPos;
+
+          let s45 = 0.70710678;
+          let rotatedX = currentPos.x * s45 + currentPos.y * s45;
+          let rotatedY = -currentPos.x  * s45 + currentPos.y * s45;
+
+          let viewScale = 0.6; //Hacerlo dinamico
+
           var output: VertexOutput;
-          output.position = vec4f(cellOrigin + scaledPos, 0.0, 1.0);
+          output.position = vec4f(rotatedX * viewScale, rotatedY * viewScale, 0.0, 1.0);
           output.cellState = cellStates[instance];
           return output;
         }
