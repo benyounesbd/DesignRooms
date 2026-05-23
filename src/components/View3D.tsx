@@ -154,6 +154,9 @@ function View3D() {
     let animationId: number;
 
     function frame() {
+      if (!context) return;
+      device.queue.writeBuffer(storageBuffer, 0, cellStates);
+
       const encoder = device.createCommandEncoder();
 
       const view = context.getCurrentTexture().createView();
