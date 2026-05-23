@@ -106,10 +106,13 @@ function View3D() {
 
         @fragment
         fn fragmentMain(@location(0) @interpolate(flat) cellState: i32) -> @location(0) vec4f {
+          var color = vec3f(0.0, 0.0, 0.0);
+
           if (cellState == 1) {
-            return vec4f(1.0, 0.0, 0.0, 1.0);
+            color = vec3f(1.0, 1.0, 1.0);
           }
-            return vec4f(1.0, 1.0, 1.0, 1.0);
+
+          return vec4f(color, 1.0);
         }
       `,
     });
