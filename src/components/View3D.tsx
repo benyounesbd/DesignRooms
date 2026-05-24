@@ -92,7 +92,7 @@ function View3D() {
             2.0 / cols
           );
 
-          let normalizedPos = (pos + 1.0) / 2.0;
+          let normalizedPos = (pos / 2.0) + 2.5;
 
           let scaledPos = normalizedPos * cellSize;
 
@@ -107,7 +107,7 @@ function View3D() {
           let viewScale = 0.6; //Hacerlo dinamico
 
           var output: VertexOutput;
-          output.position = vec4f(rotatedX * viewScale, rotatedY * viewScale, 0.0, 1.0);
+          output.position = vec4f(rotatedX * viewScale, (rotatedY * viewScale) + 0.2, 0.0, 1.0);
           output.cellState = cellStates[instance];
           return output;
         }
