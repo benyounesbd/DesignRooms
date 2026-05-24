@@ -14,7 +14,7 @@ function App() {
   if (!ready) {
     return (
       <div className="bg-black text-white w-full h-screen flex items-center justify-center">
-        Cargando WebGPU...
+        Loading WebGPU...
       </div>
     );
   }
@@ -24,11 +24,11 @@ function App() {
       <h1 className="col-span-3">Design rooms</h1>
 
       <div className="col-span-2 row-span-2">
-        <View2D />
+        <View3D />
       </div>
 
       <div className="col-span-1">
-        <View3D />
+        <View2D />
       </div>
 
       <div className="col-span-1 ">

@@ -161,6 +161,7 @@ function View2D() {
 
         cellStates[index] = cellStates[index] === 0 ? 1 : 0;
         console.log(
+          cellStates,
           `Celda [Fila: ${row}, Columna: ${col}] -> Estado actual: ${cellStates[index]} (Índice array: ${index})`,
         );
 
@@ -205,7 +206,7 @@ function View2D() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} width={900} height={450} />;
+  return <canvas ref={canvasRef} width={450} height={225} />;
 }
 
 export default View2D;

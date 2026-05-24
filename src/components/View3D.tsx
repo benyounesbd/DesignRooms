@@ -101,10 +101,11 @@ function View3D() {
           let currentPos = cellOrigin + scaledPos;
 
           let s45 = 0.70710678;
-          let rotatedX = currentPos.x * s45 + currentPos.y * s45;
-          let rotatedY = -currentPos.x  * s45 + currentPos.y * s45;
+          let rotatedX = currentPos.x * s45 + currentPos.y * s45; //rotacion
+          let rotatedY = (-currentPos.x  * s45 + currentPos.y * s45) * 0.5; //inclinacion perspectiva + rotacion
 
-          let viewScale = 0.6; //Hacerlo dinamico
+
+          let viewScale = 0.9; //Hacerlo dinamico
 
           var output: VertexOutput;
           output.position = vec4f(rotatedX * viewScale, (rotatedY * viewScale) + 0.2, 0.0, 1.0);
@@ -196,7 +197,7 @@ function View3D() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} width={450} height={225} />;
+  return <canvas ref={canvasRef} width={900} height={450} />;
 }
 
 export default View3D;
