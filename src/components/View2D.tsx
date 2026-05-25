@@ -160,10 +160,6 @@ function View2D() {
         const index = row * COLUMNS + col;
 
         cellStates[index] = cellStates[index] === 0 ? 1 : 0;
-        console.log(
-          cellStates,
-          `Celda [Fila: ${row}, Columna: ${col}] -> Estado actual: ${cellStates[index]} (Índice array: ${index})`,
-        );
 
         device.queue.writeBuffer(storageBuffer, 0, cellStates);
       }
@@ -174,6 +170,8 @@ function View2D() {
     let animationId: number;
 
     function frame() {
+      device.queue.writeBuffer(storageBuffer, 0, cellStates);
+
       const encoder = device.createCommandEncoder();
 
       const view = context.getCurrentTexture().createView();
