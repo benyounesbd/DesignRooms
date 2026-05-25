@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { mat4, vec3 } from "gl-matrix";
 import {
   configureCanvas,
   getDevice,
@@ -20,14 +21,45 @@ function View3D() {
 
     const { COLUMNS, ROWS } = GRID_CONFIG;
 
-    const uniformArray = new Float32Array([COLUMNS, ROWS]);
+    const projectionMatrix = mat4.create();
+    const orthoSize = 2.0;
+    const aspect = canvas.width / canvas.height;
+
+    mat4.ortho(
+      projectionMatrix,
+      -orthoSize * aspect,
+      orthoSize * aspect,
+      -orthoSize,
+      orthoSize,
+      -100.0,
+      100.0,
+    );
+
+    const viewMatrix = mat4.create();
+    mat4.lookAt(
+      viewMatrix,
+      vec3.fromValues(3.0, 3.0, 3.0),
+      vec3.fromValues(0.0, 0.0, 0.0),
+      vec3.fromValues(0.0, -1.0, 0.0),
+    );
+
+    const viewProjArray = new Float32Array(32);
+    viewProjArray.set(projectionMatrix, 0);
+    viewProjArray.set(viewMatrix, 16);
+
+    const gridUniformsArray = new Float32Array([COLUMNS, ROWS, 0.0, 0.0]);
+
+    const uniformArray = new Float32Array(
+      viewProjArray.length + gridUniformsArray.length,
+    );
+    uniformArray.set(viewProjArray, 0);
+    uniformArray.set(gridUniformsArray, viewProjArray.length);
 
     const uniformBuffer = device.createBuffer({
-      label: "Grid Uniforms 3D",
+      label: "3D Camera Uniforms",
       size: uniformArray.byteLength,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-
     device.queue.writeBuffer(uniformBuffer, 0, uniformArray);
 
     const storageBuffer = device.createBuffer({
