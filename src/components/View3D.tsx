@@ -52,6 +52,7 @@ function View3D() {
     const uniformArray = new Float32Array(
       viewProjArray.length + gridUniformsArray.length,
     );
+
     uniformArray.set(viewProjArray, 0);
     uniformArray.set(gridUniformsArray, viewProjArray.length);
 
@@ -107,74 +108,39 @@ function View3D() {
     device.queue.writeBuffer(vertexBuffer, 0, vertices);
 
     const vertexBufferLayout: GPUVertexBufferLayout = {
-      arrayStride: 8,
+      arrayStride: 24,
       attributes: [
-        {
-          format: "float32x2",
-          offset: 0,
-          shaderLocation: 0,
-        },
+        { format: "float32x3", offset: 0, shaderLocation: 0 },
+        { format: "float32x3", offset: 12, shaderLocation: 1 }, // Normal
       ],
     };
 
     const cellShaderModule = device.createShaderModule({
       label: "Cell shader",
       code: `
-        @group(0) @binding(0) var<uniform> grid: vec2f;
-        @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
+        struct Uniforms {
+          projection: mat4x4f,
+          view: mat4x4f,
+        }
+
+        @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 
         struct VertexOutput {
           @builtin(position) position: vec4f,
-          @location(0)  @interpolate(flat) cellState: i32,
         }
 
         @vertex
-        fn vertexMain(@location(0) pos: vec2f,
-                      @builtin(instance_index) instance: u32) -> VertexOutput {
-
-          let i = f32(instance);
-          
-          let cols = grid.x;
-          let rows = grid.y;
-
-          let col = i % cols;
-          let row = floor(i / cols);
-
-          let cellSize = vec2f(
-            (2.0 / cols) , 
-            2.0 / cols
-          );
-
-          let normalizedPos = (pos / 2.0) + 2.5;
-
-          let scaledPos = normalizedPos * cellSize;
-
-          let cellOrigin = vec2f(-1.0, -1.0) + vec2f(col * cellSize.x, row * cellSize.y) ;
-
-          let currentPos = cellOrigin + scaledPos;
-
-          let s45 = 0.70710678;
-          let rotatedX = currentPos.x * s45 + currentPos.y * s45; //rotacion
-          let rotatedY = (-currentPos.x  * s45 + currentPos.y * s45) * 0.5; //inclinacion perspectiva + rotacion
-
-
-          let viewScale = 0.9; //Hacerlo dinamico
-
-          var output: VertexOutput;
-          output.position = vec4f(rotatedX * viewScale, (rotatedY * viewScale) + 0.2, 0.0, 1.0);
-          output.cellState = cellStates[instance];
-          return output;
+        fn vertexMain(@location(0) pos: vec3f, @location(1) normal: vec3f) -> VertexOutput {
+          var out: VertexOutput;
+          // Aplicamos las matrices al cubo
+          out.position = uniforms.projection * uniforms.view * vec4f(pos, 1.0);
+          return out;
         }
 
         @fragment
-        fn fragmentMain(@location(0) @interpolate(flat) cellState: i32) -> @location(0) vec4f {
-          var color = vec3f(0.0, 0.0, 0.0);
-
-          if (cellState == 1) {
-            color = vec3f(1.0, 1.0, 1.0);
-          }
-
-          return vec4f(color, 1.0);
+        fn fragmentMain() -> @location(0) vec4f {
+          // Color básico azul sin depender de datos de entrada
+          return vec4f(0.0, 0.6, 1.0, 1.0); 
         }
       `,
     });
@@ -206,10 +172,6 @@ function View3D() {
           binding: 0,
           resource: { buffer: uniformBuffer },
         },
-        {
-          binding: 1,
-          resource: { buffer: storageBuffer },
-        },
       ],
     });
 
@@ -237,7 +199,8 @@ function View3D() {
       pass.setPipeline(pipeline);
       pass.setVertexBuffer(0, vertexBuffer);
       pass.setBindGroup(0, bindGroup);
-      pass.draw(vertices.length / 2, COLUMNS * ROWS);
+
+      pass.draw(36, 1);
       pass.end();
 
       device.queue.submit([encoder.finish()]);
