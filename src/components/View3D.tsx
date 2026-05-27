@@ -121,6 +121,7 @@ function View3D() {
         struct Uniforms {
           projection: mat4x4f,
           view: mat4x4f,
+          grid: vec2f,
         }
 
         @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -130,16 +131,31 @@ function View3D() {
         }
 
         @vertex
-        fn vertexMain(@location(0) pos: vec3f, @location(1) normal: vec3f) -> VertexOutput {
+        fn vertexMain(@location(0) pos: vec3f,
+                      @location(1) normal: vec3f,
+                      @builtin(instance_index) instance: u32) -> VertexOutput {
+          let i = f32(instance);
+          let cols = uniforms.grid.x;
+          let rows = uniforms.grid.y;
+
+          let col = i % cols;
+          let row = floor(i / cols);
+
+          let size = 0.35;
+
+          let worldPos = vec3f(
+            (pos.x + (cols - 1.0 - col) - cols * 0.5) * size, //INvertir ordre columnes
+            (pos.y + 1.0) * size - 0.5, //fix altura
+            (pos.z + row  - rows * 0.5) * size, //invertir ordre rows
+          );
+
           var out: VertexOutput;
-          // Aplicamos las matrices al cubo
-          out.position = uniforms.projection * uniforms.view * vec4f(pos, 1.0);
+          out.position = uniforms.projection * uniforms.view * vec4f(worldPos, 1.0);
           return out;
         }
 
         @fragment
         fn fragmentMain() -> @location(0) vec4f {
-          // Color básico azul sin depender de datos de entrada
           return vec4f(0.0, 0.6, 1.0, 1.0); 
         }
       `,
@@ -200,7 +216,7 @@ function View3D() {
       pass.setVertexBuffer(0, vertexBuffer);
       pass.setBindGroup(0, bindGroup);
 
-      pass.draw(36, 1);
+      pass.draw(36, COLUMNS * ROWS);
       pass.end();
 
       device.queue.submit([encoder.finish()]);
