@@ -114,6 +114,16 @@ function View3D() {
         { format: "float32x3", offset: 12, shaderLocation: 1 }, // Normal
       ],
     };
+    const depthTexture = device.createTexture({
+      label: "3D Depth Texture",
+      size: {
+        width: canvas.width,
+        height: canvas.height,
+        depthOrArrayLayers: 1,
+      },
+      format: "depth24plus",
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
 
     const cellShaderModule = device.createShaderModule({
       label: "Cell shader",
@@ -125,9 +135,11 @@ function View3D() {
         }
 
         @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+        @group(0) @binding(1) var<storage, read> cellStates: array<i32>;
 
         struct VertexOutput {
           @builtin(position) position: vec4f,
+          @location(0) @interpolate(flat) cellState: i32,
           @location(1) lighting: f32,
         }
 
@@ -144,6 +156,12 @@ function View3D() {
 
           let size = 0.35;
 
+          let state = cellStates[instance];
+
+          if (state == 0) {
+            return VertexOutput(vec4f(2.0, 2.0, 2.0, 1.0), 0, 0.0);
+          }
+
           let worldPos = vec3f(
             (pos.x + (cols - 1.0 - col) - cols * 0.5) * size, //INvertir ordre columnes
             (pos.y + 1.0) * size - 0.5, //fix altura
@@ -155,14 +173,23 @@ function View3D() {
 
           var out: VertexOutput;
           out.position = uniforms.projection * uniforms.view * vec4f(worldPos, 1.0);
-
+          out.cellState = state;
           out.lighting  = ambient + diffuse;
           return out;
         }
 
         @fragment
-        fn fragmentMain() -> @location(0) vec4f {
-          return vec4f(0.0, 0.6, 1.0, 1.0); 
+        fn fragmentMain(@location(0) @interpolate(flat) cellState: i32,
+                        @location(1) lighting: f32) -> @location(0) vec4f {
+          
+          var baseColor = vec3f(0.0, 0.0, 0.0); 
+
+          if (cellState == 1) {
+            baseColor = vec3f(0.0, 0.6, 1.0); 
+          }
+
+          let finalColor = baseColor * lighting;
+          return vec4f(finalColor, 1.0);
         }
       `,
     });
@@ -184,6 +211,11 @@ function View3D() {
           },
         ],
       },
+      depthStencil: {
+        depthWriteEnabled: true,
+        depthCompare: "less-equal",
+        format: "depth24plus",
+      },
     });
 
     const bindGroup = device.createBindGroup({
@@ -194,6 +226,7 @@ function View3D() {
           binding: 0,
           resource: { buffer: uniformBuffer },
         },
+        { binding: 1, resource: { buffer: storageBuffer } },
       ],
     });
 
@@ -216,6 +249,12 @@ function View3D() {
             storeOp: "store",
           },
         ],
+        depthStencilAttachment: {
+          view: depthTexture.createView(),
+          depthClearValue: 1.0,
+          depthLoadOp: "clear",
+          depthStoreOp: "store",
+        },
       });
 
       pass.setPipeline(pipeline);
