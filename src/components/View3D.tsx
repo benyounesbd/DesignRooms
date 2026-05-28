@@ -128,6 +128,7 @@ function View3D() {
 
         struct VertexOutput {
           @builtin(position) position: vec4f,
+          @location(1) lighting: f32,
         }
 
         @vertex
@@ -148,9 +149,14 @@ function View3D() {
             (pos.y + 1.0) * size - 0.5, //fix altura
             (pos.z + row  - rows * 0.5) * size, //invertir ordre rows
           );
+          let lightDir = normalize(vec3f(0.4, 1.0, 0.4));
+          let diffuse = max(dot(normal, lightDir), 0.0);
+          let ambient = 0.35;
 
           var out: VertexOutput;
           out.position = uniforms.projection * uniforms.view * vec4f(worldPos, 1.0);
+
+          out.lighting  = ambient + diffuse;
           return out;
         }
 
