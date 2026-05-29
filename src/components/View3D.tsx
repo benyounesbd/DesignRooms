@@ -29,8 +29,8 @@ function View3D() {
       projectionMatrix,
       -orthoSize * aspect,
       orthoSize * aspect,
-      orthoSize,
       -orthoSize,
+      orthoSize,
       -100.0,
       100.0,
     );
@@ -40,7 +40,7 @@ function View3D() {
       viewMatrix,
       vec3.fromValues(3.0, 3.0, 3.0),
       vec3.fromValues(0.0, 0.0, 0.0),
-      vec3.fromValues(0.0, 1.0, 0.0),
+      vec3.fromValues(0.0, -1.0, 0.0),
     );
 
     const viewProjArray = new Float32Array(32);
